@@ -41,6 +41,16 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); fon
   letter-spacing:0.12em;
   text-transform:uppercase;
   color:var(--text);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.topbar-dot {
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:conic-gradient(from 10deg, #38bdf8, #a78bfa, #f472b6, #34d399, #38bdf8);
+  box-shadow:0 0 10px rgba(167,139,250,0.45);
 }
 .topbar-meta {
   font-family:'DM Mono',monospace;
@@ -48,6 +58,15 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); fon
   letter-spacing:0.08em;
   color:var(--text-dim);
 }
+.topbar-meta a {
+  color:var(--text);
+  text-decoration:none;
+}
+.topbar-meta a strong {
+  font-weight:700;
+  color:#ffffff;
+}
+.topbar-meta a:hover { color:#ffffff; }
 
 #workspace {
   flex:1;
@@ -232,6 +251,91 @@ input[type=range]::-moz-range-thumb {
 .btn.primary:hover { background:rgba(167,139,250,0.28); }
 .btn.danger { background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.4); color:#f87171; animation:blink 1s ease-in-out infinite; }
 
+#canvas-bottom-controls {
+  position:absolute;
+  left:50%;
+  bottom:14px;
+  transform:translateX(-50%);
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  border:1px solid var(--panel-border);
+  border-radius:12px;
+  background:rgba(9,9,18,0.82);
+  backdrop-filter:blur(14px) saturate(1.35);
+  -webkit-backdrop-filter:blur(14px) saturate(1.35);
+  z-index:15;
+}
+.bottom-main-btn {
+  min-width:150px;
+  padding:9px 14px;
+  border-radius:10px;
+  border:1px solid rgba(167,139,250,0.42);
+  background:rgba(167,139,250,0.18);
+  color:#ffffff;
+  font-size:11px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:all 0.15s;
+}
+.bottom-main-btn:hover { background:rgba(167,139,250,0.28); }
+#canvas-bottom-controls #rec-dot { margin-left:0; }
+
+#export-modal {
+  position:fixed;
+  inset:0;
+  z-index:70;
+  display:none;
+}
+#export-modal.open { display:block; }
+#export-modal .modal-backdrop {
+  position:absolute;
+  inset:0;
+  background:rgba(2,2,8,0.58);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+}
+#export-modal .modal-panel {
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:min(420px, calc(100vw - 24px));
+  max-height:min(82vh, 760px);
+  transform:translate(-50%, -50%);
+  overflow:auto;
+  padding:14px 14px 12px;
+  border-radius:14px;
+  border:1px solid var(--panel-border);
+  background:rgba(9,9,18,0.92);
+  backdrop-filter:blur(24px) saturate(1.5);
+  -webkit-backdrop-filter:blur(24px) saturate(1.5);
+}
+#export-modal .modal-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:10px;
+}
+.modal-title {
+  font-size:10px;
+  font-family:'DM Mono',monospace;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  color:var(--text-dim);
+}
+.modal-close {
+  width:28px;
+  height:28px;
+  border-radius:8px;
+  border:1px solid var(--panel-border);
+  background:var(--panel-bg);
+  color:var(--text);
+  cursor:pointer;
+}
+.modal-close:hover { background:rgba(255,255,255,0.08); }
+
 /* ── Sharp Fold controls block ── */
 #sharp-controls {
   background: rgba(244,114,182,0.05);
@@ -367,14 +471,16 @@ input[type=range]::-moz-range-thumb {
   #sidebar-left { order:1; }
   #canvas-wrap { order:2; min-height:42vh; }
   #sidebar-right { order:3; }
+  #canvas-bottom-controls { bottom:10px; }
+  .bottom-main-btn { min-width:128px; padding:8px 12px; }
 }
 </style>
 </head>
 <body>
 <div id="app">
   <header id="topbar">
-    <div class="topbar-title">Liquid Shape Maker</div>
-    <div class="topbar-meta">build by @mertoker</div>
+    <div class="topbar-title"><span class="topbar-dot"></span>Liquid Shape Maker</div>
+    <div class="topbar-meta">build by <a href="https://merttoker.com/" target="_blank" rel="noopener noreferrer"><strong>merttoker</strong></a></div>
   </header>
   <div id="workspace">
   <div id="sidebar-left" class="sidebar">
@@ -484,24 +590,19 @@ input[type=range]::-moz-range-thumb {
 
   </div><!-- /sidebar-left -->
 
-  <div id="canvas-wrap"><canvas id="c"></canvas></div>
+  <div id="canvas-wrap">
+    <canvas id="c"></canvas>
+    <div id="canvas-bottom-controls">
+      <button class="icon-btn" id="play-btn" title="Play/Pause">
+        <svg id="play-icon" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 4l15 8-15 8z"/></svg>
+        <svg id="pause-icon" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+      </button>
+      <div id="rec-dot"></div>
+      <button class="bottom-main-btn" id="open-export-modal">Export</button>
+    </div>
+  </div>
 
   <div id="sidebar-right" class="sidebar">
-
-    <!-- PERFORMANCE -->
-    <div class="sec">
-      <div class="sec-label">Performance</div>
-      <div class="slider-wrap">
-        <div class="slider-header"><span class="slider-label">Geometry Quality</span></div>
-        <select class="styled-select" id="geoQuality">
-          <option value="legacy" selected>Legacy (Exact)</option>
-          <option value="balanced">Balanced</option>
-          <option value="low">Low</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="divider"></div>
 
     <!-- COLOR PARAMS -->
     <div class="sec">
@@ -786,58 +887,16 @@ input[type=range]::-moz-range-thumb {
 
     <div class="divider"></div>
 
-    <!-- PLAYBACK -->
+    <!-- PERFORMANCE -->
     <div class="sec">
-      <div class="sec-label">Playback</div>
-      <div class="playback-row">
-        <button class="icon-btn" id="play-btn" title="Play/Pause">
-          <svg id="play-icon" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 4l15 8-15 8z"/></svg>
-          <svg id="pause-icon" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
-        </button>
-        <div id="rec-dot"></div>
-      </div>
-    </div>
-
-    <!-- EXPORT -->
-    <div class="sec">
-      <div class="sec-label">Export</div>
+      <div class="sec-label">Performance</div>
       <div class="slider-wrap">
-        <div class="slider-header"><span class="slider-label">Image Scale</span></div>
-        <select class="styled-select" id="exportScale">
-          <option value="1" selected>1x</option>
-          <option value="2">2x</option>
-          <option value="3">3x</option>
+        <div class="slider-header"><span class="slider-label">Geometry Quality</span></div>
+        <select class="styled-select" id="geoQuality">
+          <option value="legacy" selected>Legacy (Exact)</option>
+          <option value="balanced">Balanced</option>
+          <option value="low">Low</option>
         </select>
-      </div>
-      <div class="slider-wrap">
-        <div class="slider-header"><span class="slider-label">Video Format</span></div>
-        <select class="styled-select" id="videoFormat">
-          <option value="webm" selected>WebM</option>
-          <option value="mp4">MP4 (if browser supports)</option>
-        </select>
-      </div>
-      <div class="slider-wrap">
-        <div class="slider-header"><span class="slider-label">Video Duration</span><span class="slider-val" id="videoDuration-val">8.0s</span></div>
-        <input type="range" id="videoDuration" min="2" max="20" step="0.5" value="8">
-      </div>
-      <div class="slider-wrap">
-        <div class="slider-header"><span class="slider-label">Video FPS</span><span class="slider-val" id="videoFps-val">60</span></div>
-        <input type="range" id="videoFps" min="24" max="60" step="1" value="60">
-      </div>
-      <div class="slider-wrap">
-        <div class="slider-header"><span class="slider-label">Video Mbps</span><span class="slider-val" id="videoBitrate-val">8.0</span></div>
-        <input type="range" id="videoBitrate" min="2" max="20" step="0.5" value="8">
-      </div>
-      <div class="btn-row">
-        <button class="btn" id="export-png">PNG</button>
-        <button class="btn" id="export-jpg">JPEG</button>
-        <button class="btn" id="export-webp">WebP</button>
-      </div>
-      <div class="btn-row">
-        <button class="btn" id="export-svg">SVG*</button>
-      </div>
-      <div class="btn-row">
-        <button class="btn primary" id="export-video">● Record Video</button>
       </div>
     </div>
 
@@ -848,6 +907,54 @@ input[type=range]::-moz-range-thumb {
   </div><!-- /sidebar-right -->
   </div><!-- /workspace -->
 </div><!-- /app -->
+
+<div id="export-modal" aria-hidden="true">
+  <div class="modal-backdrop" data-close-export></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+    <div class="modal-head">
+      <div class="modal-title" id="export-modal-title">Export</div>
+      <button class="modal-close" id="close-export-modal" aria-label="Close export modal">×</button>
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-header"><span class="slider-label">Image Scale</span></div>
+      <select class="styled-select" id="exportScale">
+        <option value="1" selected>1x</option>
+        <option value="2">2x</option>
+        <option value="3">3x</option>
+      </select>
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-header"><span class="slider-label">Video Format</span></div>
+      <select class="styled-select" id="videoFormat">
+        <option value="webm" selected>WebM</option>
+        <option value="mp4">MP4 (if browser supports)</option>
+      </select>
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-header"><span class="slider-label">Video Duration</span><span class="slider-val" id="videoDuration-val">8.0s</span></div>
+      <input type="range" id="videoDuration" min="2" max="20" step="0.5" value="8">
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-header"><span class="slider-label">Video FPS</span><span class="slider-val" id="videoFps-val">60</span></div>
+      <input type="range" id="videoFps" min="24" max="60" step="1" value="60">
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-header"><span class="slider-label">Video Mbps</span><span class="slider-val" id="videoBitrate-val">8.0</span></div>
+      <input type="range" id="videoBitrate" min="2" max="20" step="0.5" value="8">
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="export-png">PNG</button>
+      <button class="btn" id="export-jpg">JPEG</button>
+      <button class="btn" id="export-webp">WebP</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="export-svg">SVG*</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" id="export-video">● Record Video</button>
+    </div>
+  </div>
+</div>
 
 <div id="toast"></div>
 
@@ -2160,6 +2267,24 @@ const exportSettings = {
   fps: 60,
   bitrateMbps: 8,
 };
+
+const exportModal = document.getElementById('export-modal');
+const openExportModalBtn = document.getElementById('open-export-modal');
+const closeExportModalBtn = document.getElementById('close-export-modal');
+
+function setExportModalOpen(open){
+  exportModal.classList.toggle('open', open);
+  exportModal.setAttribute('aria-hidden', open ? 'false' : 'true');
+}
+
+openExportModalBtn.addEventListener('click', () => setExportModalOpen(true));
+closeExportModalBtn.addEventListener('click', () => setExportModalOpen(false));
+exportModal.querySelector('.modal-backdrop').addEventListener('click', () => setExportModalOpen(false));
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && exportModal.classList.contains('open')){
+    setExportModalOpen(false);
+  }
+});
 
 function bindExportSlider(id, labelId, formatter, setter){
   const input = document.getElementById(id);
