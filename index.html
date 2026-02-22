@@ -335,6 +335,124 @@ input[type=range]::-moz-range-thumb {
   cursor:pointer;
 }
 .modal-close:hover { background:rgba(255,255,255,0.08); }
+.export-tabs {
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:6px;
+  margin-bottom:10px;
+}
+.export-tab {
+  border:1px solid var(--panel-border);
+  background:var(--panel-bg);
+  color:var(--text-dim);
+  border-radius:9px;
+  padding:7px 8px;
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  cursor:pointer;
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+}
+.export-tab.active {
+  color:var(--accent);
+  border-color:rgba(167,139,250,0.45);
+  background:rgba(167,139,250,0.16);
+}
+.export-tab-ico { opacity:0.95; font-size:15px; line-height:1; }
+.export-tab-label { font-size:10px; line-height:1.1; letter-spacing:0.06em; }
+.export-pane { display:none; }
+.export-pane.active { display:block; }
+.export-action { margin-top:8px; }
+#export-video { width:100%; }
+#export-image-action { width:100%; }
+.chip-group {
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.chip {
+  border:1px solid var(--panel-border);
+  background:var(--panel-bg);
+  color:var(--text-dim);
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:10px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.chip.active {
+  color:var(--accent);
+  border-color:rgba(167,139,250,0.45);
+  background:rgba(167,139,250,0.18);
+}
+.code-tools { display:flex; gap:6px; margin-top:8px; margin-bottom:8px; }
+.code-preview-title {
+  font-size:9px;
+  color:var(--text-dim);
+  text-transform:uppercase;
+  letter-spacing:0.12em;
+  margin-bottom:4px;
+  font-family:'DM Mono',monospace;
+}
+#code-loop-note {
+  margin-top:6px;
+  font-size:10px;
+  color:var(--text-dim);
+  line-height:1.35;
+}
+#code-behavior-note {
+  margin-top:6px;
+  font-size:10px;
+  color:var(--text-dim);
+  line-height:1.35;
+}
+#code-preview-image {
+  width:100%;
+  height:124px;
+  border:1px solid var(--panel-border);
+  border-radius:9px;
+  background:#06060d;
+  object-fit:contain;
+}
+#code-output {
+  margin-top:8px;
+  border:1px solid var(--panel-border);
+  border-radius:9px;
+  background:rgba(255,255,255,0.02);
+  color:#d9d9e9;
+  font-size:11px;
+  line-height:1.35;
+  font-family:'DM Mono',monospace;
+  max-height:220px;
+  overflow:auto;
+  padding:10px;
+  white-space:pre;
+}
+
+#hud-sticky {
+  position:fixed;
+  right:12px;
+  bottom:12px;
+  z-index:20;
+  min-width:114px;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid var(--panel-border);
+  background:rgba(9,9,18,0.78);
+  backdrop-filter:blur(14px) saturate(1.3);
+  -webkit-backdrop-filter:blur(14px) saturate(1.3);
+  font-family:'DM Mono',monospace;
+  font-size:9px;
+  color:var(--text-dim);
+  line-height:1.7;
+  pointer-events:none;
+}
+#hud-sticky .status-row { display:flex; justify-content:space-between; gap:10px; }
 
 /* ── Sharp Fold controls block ── */
 #sharp-controls {
@@ -437,13 +555,6 @@ input[type=range]::-moz-range-thumb {
 .mat-btn span { font-size: 7.5px; color: var(--text-dim); font-family:'DM Mono',monospace; transition: color 0.16s; }
 .mat-btn.active span { color: var(--accent); }
 
-/* ── Status ── */
-.status {
-  margin-top:auto; padding-top:12px; border-top:1px solid var(--panel-border);
-  font-family:'DM Mono',monospace; font-size:9px; color:var(--text-dim); line-height:1.7;
-}
-.status-row { display:flex; justify-content:space-between; }
-
 /* ── Toast ── */
 #toast {
   position:fixed; bottom:20px; left:50%; pointer-events:none;
@@ -473,6 +584,7 @@ input[type=range]::-moz-range-thumb {
   #sidebar-right { order:3; }
   #canvas-bottom-controls { bottom:10px; }
   .bottom-main-btn { min-width:128px; padding:8px 12px; }
+  #hud-sticky { right:10px; bottom:10px; }
 }
 </style>
 </head>
@@ -899,11 +1011,6 @@ input[type=range]::-moz-range-thumb {
         </select>
       </div>
     </div>
-
-    <div class="status">
-      <div class="status-row"><span>fps</span><span id="fps-val">—</span></div>
-      <div class="status-row"><span>time</span><span id="time-val">0.0s</span></div>
-    </div>
   </div><!-- /sidebar-right -->
   </div><!-- /workspace -->
 </div><!-- /app -->
@@ -915,45 +1022,91 @@ input[type=range]::-moz-range-thumb {
       <div class="modal-title" id="export-modal-title">Export</div>
       <button class="modal-close" id="close-export-modal" aria-label="Close export modal">×</button>
     </div>
-    <div class="slider-wrap">
-      <div class="slider-header"><span class="slider-label">Image Scale</span></div>
-      <select class="styled-select" id="exportScale">
-        <option value="1" selected>1x</option>
-        <option value="2">2x</option>
-        <option value="3">3x</option>
-      </select>
+    <div class="export-tabs">
+      <button class="export-tab active" data-export-tab="video"><span class="export-tab-ico">🎬</span><span class="export-tab-label">Video</span></button>
+      <button class="export-tab" data-export-tab="image"><span class="export-tab-ico">🖼️</span><span class="export-tab-label">Image</span></button>
+      <button class="export-tab" data-export-tab="code"><span class="export-tab-ico">💻</span><span class="export-tab-label">Code</span></button>
     </div>
-    <div class="slider-wrap">
-      <div class="slider-header"><span class="slider-label">Video Format</span></div>
-      <select class="styled-select" id="videoFormat">
-        <option value="webm" selected>WebM</option>
-        <option value="mp4">MP4 (if browser supports)</option>
-      </select>
+
+    <div class="export-pane active" data-export-pane="video">
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Video Format</span></div>
+        <div class="chip-group" id="video-format-chips">
+          <button class="chip active" data-video-format="webm">WebM</button>
+          <button class="chip" data-video-format="mp4">MP4</button>
+        </div>
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Video Duration</span><span class="slider-val" id="videoDuration-val">8.0s</span></div>
+        <input type="range" id="videoDuration" min="2" max="20" step="0.5" value="8">
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Video FPS</span><span class="slider-val" id="videoFps-val">60</span></div>
+        <input type="range" id="videoFps" min="24" max="60" step="1" value="60">
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Video Mbps</span><span class="slider-val" id="videoBitrate-val">8.0</span></div>
+        <input type="range" id="videoBitrate" min="2" max="20" step="0.5" value="8">
+      </div>
+      <div class="export-action">
+        <button class="btn primary" id="export-video">Record & Download Video</button>
+      </div>
     </div>
-    <div class="slider-wrap">
-      <div class="slider-header"><span class="slider-label">Video Duration</span><span class="slider-val" id="videoDuration-val">8.0s</span></div>
-      <input type="range" id="videoDuration" min="2" max="20" step="0.5" value="8">
+
+    <div class="export-pane" data-export-pane="image">
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Format</span></div>
+        <div class="chip-group" id="image-format-chips">
+          <button class="chip active" data-image-format="png">PNG</button>
+          <button class="chip" data-image-format="jpeg">JPEG</button>
+          <button class="chip" data-image-format="webp">WebP</button>
+        </div>
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Image Scale</span></div>
+        <select class="styled-select" id="exportScale">
+          <option value="1" selected>1x</option>
+          <option value="2">2x</option>
+          <option value="3">3x</option>
+        </select>
+      </div>
+      <div class="export-action">
+        <button class="btn primary" id="export-image-action">Export Image</button>
+      </div>
     </div>
-    <div class="slider-wrap">
-      <div class="slider-header"><span class="slider-label">Video FPS</span><span class="slider-val" id="videoFps-val">60</span></div>
-      <input type="range" id="videoFps" min="24" max="60" step="1" value="60">
-    </div>
-    <div class="slider-wrap">
-      <div class="slider-header"><span class="slider-label">Video Mbps</span><span class="slider-val" id="videoBitrate-val">8.0</span></div>
-      <input type="range" id="videoBitrate" min="2" max="20" step="0.5" value="8">
-    </div>
-    <div class="btn-row">
-      <button class="btn" id="export-png">PNG</button>
-      <button class="btn" id="export-jpg">JPEG</button>
-      <button class="btn" id="export-webp">WebP</button>
-    </div>
-    <div class="btn-row">
-      <button class="btn" id="export-svg">SVG*</button>
-    </div>
-    <div class="btn-row">
-      <button class="btn primary" id="export-video">● Record Video</button>
+
+    <div class="export-pane" data-export-pane="code">
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Code Type</span></div>
+        <div class="chip-group" id="code-format-chips">
+          <button class="chip active" data-code-format="vanilla">Vanilla</button>
+          <button class="chip" data-code-format="react">React</button>
+          <button class="chip" data-code-format="css">CSS</button>
+        </div>
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Loop Cycle (s)</span><span class="slider-val" id="codeLoopSeconds-val">0.0</span></div>
+        <input type="range" id="codeLoopSeconds" min="0" max="20" step="0.5" value="0">
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Time Speed</span><span class="slider-val" id="codeTimeSpeed-val">1.0x</span></div>
+        <input type="range" id="codeTimeSpeed" min="0.2" max="3" step="0.1" value="1">
+      </div>
+      <div class="code-tools">
+        <button class="btn primary" id="copy-code">Copy Code</button>
+      </div>
+      <div class="code-preview-title">Live Canvas Preview</div>
+      <img id="code-preview-image" alt="Current canvas preview">
+      <div id="code-loop-note">Animation: running. Loop: infinite.</div>
+      <div id="code-behavior-note">Preview düşük FPS snapshot gösterir. Üretilen snippet gerçek kullanımda `requestAnimationFrame/useFrame` ile akıcı çalışır; Loop Cycle > 0 ise verilen saniyede tekrar eder.</div>
+      <pre id="code-output"></pre>
     </div>
   </div>
+</div>
+
+<div id="hud-sticky">
+  <div class="status-row"><span>fps</span><span id="fps-val">—</span></div>
+  <div class="status-row"><span>time</span><span id="time-val">0.0s</span></div>
 </div>
 
 <div id="toast"></div>
@@ -1041,6 +1194,7 @@ const vertexShader = `
   uniform float uTime;
   uniform float uDistortion;
   uniform float uTurbulence;
+  uniform float uDispAmp;
   uniform float uFilamentIntensity;
   uniform float uFilamentScale;
   uniform float uVoronoiIntensity;
@@ -1089,7 +1243,7 @@ const vertexShader = `
 
   void main(){
     vPosition = position;
-    float disp = getDisplacement(position);
+    float disp = getDisplacement(position) * uDispAmp;
     vec3 newPos = position + normal * disp;
 
     // Liquid: recalculate normals from displacement gradient → smooth shading
@@ -1532,6 +1686,7 @@ const uniforms = {
   uTime:             { value:0 },
   uDistortion:       { value:0.20 },
   uTurbulence:       { value:0.0 },
+  uDispAmp:          { value:1.0 },
   uStyle:            { value:0.0 },
   uColorWarp:        { value:0.4 },
   uLinearFluidity:   { value:0.7 },
@@ -1607,6 +1762,7 @@ const innerVertShader = `
   uniform float uTime;
   uniform float uDistortion;
   uniform float uTurbulence;
+  uniform float uDispAmp;
   uniform float uStyle;
   uniform float uFilamentIntensity; uniform float uFilamentScale;
   uniform float uVoronoiIntensity;  uniform float uVoronoiScale;
@@ -1633,7 +1789,7 @@ const innerVertShader = `
   }
 
   void main(){
-    float disp = getDisplacement(position);
+    float disp = getDisplacement(position) * uDispAmp;
     vec3 newPos = position + normal * disp;
     if(uStyle < 0.5){
       float eps = 0.1;
@@ -1758,6 +1914,17 @@ const geometryCache = new Map();
 let geometryQuality = 'legacy';
 let currentShape = 'sphere';
 
+function getShapeDisplacementAmp(type){
+  switch(type){
+    case 'torus': return 0.42;
+    case 'trefoil': return 0.40;
+    case 'twist': return 0.36;
+    case 'chain': return 0.34;
+    case 'hemisphere': return 0.32;
+    default: return 1.0;
+  }
+}
+
 function createGeometry(type, quality){
   const q = GEO_QUALITY_PROFILES[quality] || GEO_QUALITY_PROFILES.legacy;
   let g;
@@ -1806,7 +1973,6 @@ function createGeometry(type, quality){
       for(let i = 0; i < pos.count; i++){
         const y = pos.getY(i);
         // Stretch middle, keep poles round
-        const stretch = Math.abs(y) < 0.5 ? 1.6 : 1.0;
         pos.setY(i, y * 1.6 + (y > 0 ? 0.5 : y < 0 ? -0.5 : 0));
       }
       g.computeVertexNormals(); break;
@@ -1883,18 +2049,19 @@ function setShape(type){
   if(innerMesh){ scene.remove(innerMesh); innerMesh.geometry.dispose(); }
   if(outerMesh){ scene.remove(outerMesh); outerMesh.geometry.dispose(); }
 
+  uniforms.uDispAmp.value = getShapeDisplacementAmp(type);
   const template = getGeometryTemplate(type, geometryQuality);
   const geom = template.clone();
   const geomClone = template.clone();
 
   // Inner: opaque base color, renders first
   innerMesh = new THREE.Mesh(geom, innerMaterial);
+  innerMesh.scale.setScalar(0.998);
   innerMesh.renderOrder = 0;
 
   // Outer: transparent color layer, renders on top
   outerMesh = new THREE.Mesh(geomClone, material);
   outerMesh.renderOrder = 1;
-
   scene.add(innerMesh);
   scene.add(outerMesh);
 }
@@ -2271,10 +2438,49 @@ const exportSettings = {
 const exportModal = document.getElementById('export-modal');
 const openExportModalBtn = document.getElementById('open-export-modal');
 const closeExportModalBtn = document.getElementById('close-export-modal');
+const exportTabButtons = Array.from(document.querySelectorAll('.export-tab'));
+const exportPanes = Array.from(document.querySelectorAll('.export-pane'));
+const videoFormatChipButtons = Array.from(document.querySelectorAll('#video-format-chips [data-video-format]'));
+const imageFormatChipButtons = Array.from(document.querySelectorAll('#image-format-chips [data-image-format]'));
+const codeFormatChipButtons = Array.from(document.querySelectorAll('#code-format-chips [data-code-format]'));
+const codeOutput = document.getElementById('code-output');
+const codePreviewImage = document.getElementById('code-preview-image');
+const codeLoopNote = document.getElementById('code-loop-note');
+const codeBehaviorNote = document.getElementById('code-behavior-note');
+let selectedVideoFormat = 'webm';
+let selectedImageFormat = 'png';
+let selectedCodeFormat = 'vanilla';
+let currentExportTab = 'video';
+let codePreviewRafId = 0;
+let codePreviewLastMs = 0;
+let codeLoopSeconds = 0;
+let codeTimeSpeed = 1;
 
 function setExportModalOpen(open){
   exportModal.classList.toggle('open', open);
   exportModal.setAttribute('aria-hidden', open ? 'false' : 'true');
+  if(open){
+    refreshCodeExport();
+    if(currentExportTab === 'code') startCodePreviewLoop();
+  } else {
+    stopCodePreviewLoop();
+  }
+}
+
+function setExportTab(tabId){
+  currentExportTab = tabId;
+  exportTabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.exportTab === tabId));
+  exportPanes.forEach(pane => pane.classList.toggle('active', pane.dataset.exportPane === tabId));
+  if(tabId === 'code' && exportModal.classList.contains('open')){
+    refreshCodeExport();
+    startCodePreviewLoop();
+  } else {
+    stopCodePreviewLoop();
+  }
+}
+
+function activateChip(buttons, activeButton){
+  buttons.forEach(btn => btn.classList.toggle('active', btn === activeButton));
 }
 
 openExportModalBtn.addEventListener('click', () => setExportModalOpen(true));
@@ -2283,6 +2489,242 @@ exportModal.querySelector('.modal-backdrop').addEventListener('click', () => set
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && exportModal.classList.contains('open')){
     setExportModalOpen(false);
+  }
+});
+exportTabButtons.forEach(btn => {
+  btn.addEventListener('click', () => setExportTab(btn.dataset.exportTab));
+});
+setExportTab('video');
+videoFormatChipButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    activateChip(videoFormatChipButtons, btn);
+    selectedVideoFormat = btn.dataset.videoFormat === 'mp4' ? 'mp4' : 'webm';
+    exportSettings.videoFormat = selectedVideoFormat;
+  });
+});
+imageFormatChipButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    activateChip(imageFormatChipButtons, btn);
+    selectedImageFormat = btn.dataset.imageFormat || 'png';
+  });
+});
+codeFormatChipButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    activateChip(codeFormatChipButtons, btn);
+    selectedCodeFormat = btn.dataset.codeFormat || 'vanilla';
+    refreshCodeExport();
+  });
+});
+
+function getCurrentPaletteHexes(){
+  return paletteColors.map(c => c.toLowerCase());
+}
+
+function formatCodeLoopSeconds(value){
+  return value > 0 ? `${value.toFixed(1)}s` : 'infinite';
+}
+
+function updateCodeLoopNote(){
+  const format = selectedCodeFormat;
+  const isCss = format === 'css';
+  const loopText = formatCodeLoopSeconds(codeLoopSeconds);
+  const speedText = `${codeTimeSpeed.toFixed(1)}x`;
+  if(isCss){
+    codeLoopNote.textContent = `Animation: CSS keyframes. Cycle: ${loopText}. Speed: ${speedText}.`;
+    codeBehaviorNote.textContent = 'Preview düşük FPS snapshot gösterir. CSS çıktısı döngüseldir; Loop Cycle 0 ise 5s varsayılan periyot kullanılır.';
+    return;
+  }
+  codeLoopNote.textContent = `Animation: requestAnimationFrame. Loop: ${loopText}. Speed: ${speedText}.`;
+  codeBehaviorNote.textContent = 'Preview düşük FPS snapshot gösterir. Kod çıktısı animatif gelir; Loop Cycle > 0 ise timeline o saniyede sarar, 0 ise kesintisiz akar.';
+}
+
+function updateCodePreviewFromCanvas(){
+  try{
+    codePreviewImage.src = canvas.toDataURL('image/png');
+  }catch(_){
+    codePreviewImage.removeAttribute('src');
+  }
+}
+
+function stopCodePreviewLoop(){
+  if(codePreviewRafId){
+    cancelAnimationFrame(codePreviewRafId);
+    codePreviewRafId = 0;
+  }
+}
+
+function tickCodePreview(ms){
+  if(!exportModal.classList.contains('open') || currentExportTab !== 'code'){
+    stopCodePreviewLoop();
+    return;
+  }
+  if(ms - codePreviewLastMs > 140){
+    updateCodePreviewFromCanvas();
+    codePreviewLastMs = ms;
+  }
+  codePreviewRafId = requestAnimationFrame(tickCodePreview);
+}
+
+function startCodePreviewLoop(){
+  if(codePreviewRafId) return;
+  codePreviewLastMs = 0;
+  codePreviewRafId = requestAnimationFrame(tickCodePreview);
+}
+
+function generateVanillaSnippet(){
+  const palette = getCurrentPaletteHexes();
+  const loopSecondsLiteral = codeLoopSeconds.toFixed(1);
+  const timeSpeedLiteral = codeTimeSpeed.toFixed(1);
+  return `import * as THREE from 'three';
+
+// Generated by Liquid Shape Maker
+// Animation: requestAnimationFrame (animated output)
+// Loop cycle: ${loopSecondsLiteral === '0.0' ? 'infinite' : `${loopSecondsLiteral}s`}
+// Time speed: ${timeSpeedLiteral}x
+
+const palette = ${JSON.stringify(palette, null, 2)};
+const LOOP_SECONDS = ${loopSecondsLiteral}; // 0 = infinite, >0 = wrap cycle in seconds
+const TIME_SPEED = ${timeSpeedLiteral};
+const uniforms = {
+  uTime: { value: 0 },
+  uDistortion: { value: ${uniforms.uDistortion.value.toFixed(3)} },
+  uTurbulence: { value: ${uniforms.uTurbulence.value.toFixed(3)} },
+  uColorWarp: { value: ${uniforms.uColorWarp.value.toFixed(3)} },
+  uLinearFluidity: { value: ${uniforms.uLinearFluidity.value.toFixed(3)} },
+  uClarity: { value: ${uniforms.uClarity.value.toFixed(3)} },
+  uUltraSharp: { value: ${uniforms.uUltraSharp.value > 0.5 ? 1.0 : 0.0} },
+  uFresnelIntensity: { value: ${uniforms.uFresnelIntensity.value.toFixed(3)} },
+  // TODO: add remaining uniforms/colors from your full shader
+};
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 100);
+camera.position.set(0, 0, 4.5);
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const material = new THREE.ShaderMaterial({
+  uniforms,
+  vertexShader,   // paste vertex shader source string
+  fragmentShader, // paste fragment shader source string
+  transparent: true
+});
+const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2, 64), material);
+scene.add(mesh);
+
+const clock = new THREE.Clock();
+function advanceTime(dt, current){
+  const next = current + dt * TIME_SPEED;
+  return LOOP_SECONDS > 0 ? (next % LOOP_SECONDS) : next;
+}
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  uniforms.uTime.value = advanceTime(dt, uniforms.uTime.value);
+  mesh.rotation.y += dt * 0.18;
+  renderer.render(scene, camera);
+}
+animate();
+`;
+}
+
+function generateReactSnippet(){
+  const palette = getCurrentPaletteHexes();
+  const loopSecondsLiteral = codeLoopSeconds.toFixed(1);
+  const timeSpeedLiteral = codeTimeSpeed.toFixed(1);
+  return `import { Canvas, useFrame } from '@react-three/fiber';
+import { useMemo, useRef } from 'react';
+import * as THREE from 'three';
+
+// Generated by Liquid Shape Maker
+// Animation: useFrame / requestAnimationFrame (animated output)
+// Loop cycle: ${loopSecondsLiteral === '0.0' ? 'infinite' : `${loopSecondsLiteral}s`}
+// Time speed: ${timeSpeedLiteral}x
+
+const palette = ${JSON.stringify(palette, null, 2)};
+const LOOP_SECONDS = ${loopSecondsLiteral}; // 0 = infinite, >0 = wrap cycle in seconds
+const TIME_SPEED = ${timeSpeedLiteral};
+
+function LiquidOrb(){
+  const meshRef = useRef();
+  const uniforms = useMemo(() => ({
+    uTime: { value: 0 },
+    uDistortion: { value: ${uniforms.uDistortion.value.toFixed(3)} },
+    uTurbulence: { value: ${uniforms.uTurbulence.value.toFixed(3)} },
+    uColorWarp: { value: ${uniforms.uColorWarp.value.toFixed(3)} },
+  }), []);
+
+  useFrame((_, dt) => {
+    const next = uniforms.uTime.value + dt * TIME_SPEED;
+    uniforms.uTime.value = LOOP_SECONDS > 0 ? (next % LOOP_SECONDS) : next;
+    if(meshRef.current) meshRef.current.rotation.y += dt * 0.18;
+  });
+
+  return (
+    <mesh ref={meshRef}>
+      <icosahedronGeometry args={[1, 64]} />
+      <shaderMaterial uniforms={uniforms} vertexShader={vertexShader} fragmentShader={fragmentShader} />
+    </mesh>
+  );
+}
+
+export default function App(){
+  return <Canvas camera={{ position:[0,0,4.5], fov:60 }}><LiquidOrb /></Canvas>;
+}
+`;
+}
+
+function generateCssSnippet(){
+  const palette = getCurrentPaletteHexes().slice(0, 6);
+  const effectiveCycle = codeLoopSeconds > 0 ? codeLoopSeconds : 5;
+  const duration = Math.max(0.2, effectiveCycle / Math.max(0.2, codeTimeSpeed)).toFixed(2);
+  return `.liquid-orb {
+  width: 320px;
+  aspect-ratio: 1;
+  border-radius: 44% 56% 58% 42% / 46% 39% 61% 54%;
+  background: linear-gradient(135deg, ${palette.join(', ')});
+  filter: saturate(1.15);
+  animation: liquidWarp ${duration}s ease-in-out infinite alternate;
+}
+
+@keyframes liquidWarp {
+  0% { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(24deg) scale(1.05); border-radius: 58% 42% 39% 61% / 44% 62% 38% 56%; }
+}`;
+}
+
+function refreshCodeExport(){
+  const fmt = selectedCodeFormat;
+  let code = '';
+  if(fmt === 'react') code = generateReactSnippet();
+  else if(fmt === 'css') code = generateCssSnippet();
+  else code = generateVanillaSnippet();
+  codeOutput.textContent = code;
+  updateCodeLoopNote();
+  updateCodePreviewFromCanvas();
+}
+
+bindExportSlider('codeLoopSeconds', 'codeLoopSeconds-val', v => v > 0 ? `${v.toFixed(1)}s` : '∞', v => {
+  codeLoopSeconds = v;
+  refreshCodeExport();
+});
+bindExportSlider('codeTimeSpeed', 'codeTimeSpeed-val', v => `${v.toFixed(1)}x`, v => {
+  codeTimeSpeed = v;
+  refreshCodeExport();
+});
+document.getElementById('copy-code').addEventListener('click', async () => {
+  try{
+    await navigator.clipboard.writeText(codeOutput.textContent);
+    toast('Code copied.');
+  }catch(_){
+    const ta = document.createElement('textarea');
+    ta.value = codeOutput.textContent;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    toast('Code copied.');
   }
 });
 
@@ -2310,9 +2752,6 @@ document.getElementById('exportScale').addEventListener('change', e => {
   exportSettings.imageScale = Math.max(1, Math.min(3, parseInt(e.target.value, 10) || 1));
 });
 
-document.getElementById('videoFormat').addEventListener('change', e => {
-  exportSettings.videoFormat = e.target.value === 'mp4' ? 'mp4' : 'webm';
-});
 // ── Effect groups: accordion + intensity badge + slider binding ──
 function bindFxGroup(groupId, badgeId, intensityId, intensityDisplayId, intensityUniform, extraBindings){
   const group   = document.getElementById(groupId);
@@ -2367,10 +2806,20 @@ document.getElementById('rotate-toggle').addEventListener('change',e=>{
 
 // Play / pause
 const playIcon=document.getElementById('play-icon'), pauseIcon=document.getElementById('pause-icon');
-document.getElementById('play-btn').addEventListener('click',()=>{
+function togglePlayback(){
   isPlaying=!isPlaying;
   playIcon.style.display  = isPlaying?'none':'';
   pauseIcon.style.display = isPlaying?'':'none';
+}
+document.getElementById('play-btn').addEventListener('click', togglePlayback);
+document.addEventListener('keydown', e => {
+  if(e.code !== 'Space' && e.key !== ' ') return;
+  const tag = (document.activeElement?.tagName || '').toLowerCase();
+  const inFormField = tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button' || document.activeElement?.isContentEditable;
+  if(inFormField) return;
+  if(exportModal.classList.contains('open')) return;
+  e.preventDefault();
+  togglePlayback();
 });
 
 // ── Toast ────────────────────────────────────────────────
@@ -2440,29 +2889,9 @@ function exportImage(type){
     toast(`Saved as ${filename}`);
   }, type, quality);
 }
-document.getElementById('export-png').addEventListener('click',()=>exportImage('image/png'));
-document.getElementById('export-jpg').addEventListener('click',()=>exportImage('image/jpeg'));
-document.getElementById('export-webp').addEventListener('click',()=>exportImage('image/webp'));
-document.getElementById('export-svg').addEventListener('click', () => {
-  const wantTransparent = document.getElementById('pngTransparent').checked;
-  const restoreRender = beginCapture(wantTransparent, exportSettings.imageScale);
-  try {
-    const width = canvas.width;
-    const height = canvas.height;
-    const pngData = canvas.toDataURL('image/png');
-    const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-  <image href="${pngData}" width="${width}" height="${height}" />
-</svg>
-`;
-    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-    downloadBlob(blob, 'liquid-shape.svg');
-    toast('SVG saved (embedded bitmap).');
-  } catch (error) {
-    toast('SVG export failed.');
-  } finally {
-    restoreRender();
-  }
+document.getElementById('export-image-action').addEventListener('click', () => {
+  const mime = selectedImageFormat === 'jpeg' ? 'image/jpeg' : selectedImageFormat === 'webp' ? 'image/webp' : 'image/png';
+  exportImage(mime);
 });
 
 // WebM video
@@ -2494,7 +2923,7 @@ function getPreferredVideoMime(format){
 }
 
 function setRecordingUI(recording){
-  recBtn.textContent = recording ? '■ Stop Recording' : '● Record Video';
+  recBtn.textContent = recording ? 'Stop Recording' : 'Record & Download Video';
   recBtn.classList.toggle('danger', recording);
   recBtn.classList.toggle('primary', !recording);
   recDot.style.display = recording ? 'block' : 'none';
@@ -2522,7 +2951,7 @@ function startRecording(){
     return;
   }
 
-  const requestedFormat = exportSettings.videoFormat;
+  const requestedFormat = selectedVideoFormat;
   const mime = getPreferredVideoMime(requestedFormat);
   if(!mime){
     toast('No supported video codec found.');
