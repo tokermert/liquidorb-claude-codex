@@ -11,6 +11,7 @@
 
 :root {
   --bg: #0b0b12;
+  --scene-bg: #000000;
   --panel-bg: rgba(255,255,255,0.035);
   --panel-border: rgba(255,255,255,0.07);
   --text: rgba(255,255,255,0.82);
@@ -21,42 +22,71 @@
 
 html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text); user-select:none; }
 
-#app { display:flex; width:100vw; height:100vh; }
+#app { display:flex; flex-direction:column; width:100vw; height:100vh; }
+
+#topbar {
+  height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 14px;
+  border-bottom:1px solid var(--panel-border);
+  background:rgba(9,9,18,0.82);
+  backdrop-filter:blur(18px) saturate(1.3);
+  -webkit-backdrop-filter:blur(18px) saturate(1.3);
+}
+.topbar-title {
+  font-family:'DM Mono',monospace;
+  font-size:11px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--text);
+}
+.topbar-meta {
+  font-family:'DM Mono',monospace;
+  font-size:10px;
+  letter-spacing:0.08em;
+  color:var(--text-dim);
+}
+
+#workspace {
+  flex:1;
+  min-height:0;
+  display:flex;
+}
 
 #canvas-wrap {
-  flex:1; position:relative;
-  background: radial-gradient(ellipse 70% 70% at 50% 50%, #130e1f 0%, #07070d 70%);
+  flex:1; min-width:0; position:relative;
+  background: var(--scene-bg);
+}
+#canvas-wrap.transparent-preview {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, #d8d8d8 25%, transparent 25%),
+    linear-gradient(-45deg, #d8d8d8 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #d8d8d8 75%),
+    linear-gradient(-45deg, transparent 75%, #d8d8d8 75%);
+  background-size: 22px 22px;
+  background-position: 0 0, 0 11px, 11px -11px, -11px 0;
 }
 #canvas-wrap canvas { display:block; width:100%!important; height:100%!important; }
 
 /* ── Sidebar ── */
-#sidebar {
-  width:var(--panel-w); height:100vh;
+.sidebar {
+  width:var(--panel-w); height:100%;
   display:flex; flex-direction:column;
   padding:18px 14px 16px;
   background:rgba(9,9,18,0.82);
   backdrop-filter:blur(24px) saturate(1.5);
   -webkit-backdrop-filter:blur(24px) saturate(1.5);
-  border-left:1px solid var(--panel-border);
   overflow-y:auto; overflow-x:hidden;
   scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.08) transparent;
   gap:0;
 }
-#sidebar::-webkit-scrollbar { width:3px; }
-#sidebar::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:2px; }
-
-.logo {
-  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.22em;
-  text-transform:uppercase; color:var(--text-dim);
-  margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid var(--panel-border);
-  display:flex; align-items:center; gap:8px;
-}
-.logo-dot {
-  width:7px; height:7px; border-radius:50%; flex-shrink:0;
-  background:conic-gradient(from 0deg,#38bdf8,#a78bfa,#f472b6,#34d399,#38bdf8);
-  animation:spin 4s linear infinite;
-}
-@keyframes spin { to{transform:rotate(360deg);} }
+.sidebar::-webkit-scrollbar { width:3px; }
+.sidebar::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:2px; }
+#sidebar-left { border-right:1px solid var(--panel-border); }
+#sidebar-right { border-left:1px solid var(--panel-border); }
 
 /* ── Section ── */
 .sec { margin-bottom:18px; }
@@ -86,16 +116,6 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); fon
 .shape-btn.active { background:rgba(167,139,250,0.14); border-color:rgba(167,139,250,0.45); }
 .shape-btn.active svg { opacity:1; }
 .shape-btn.active span { color:var(--accent); }
-
-/* ── Style toggle ── */
-.style-row { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
-.style-btn {
-  padding:7px 6px; border-radius:8px; border:1px solid var(--panel-border);
-  background:var(--panel-bg); color:var(--text-dim); font-family:'DM Sans',sans-serif;
-  font-size:10px; cursor:pointer; text-align:center; transition:all 0.16s;
-}
-.style-btn:hover { background:rgba(255,255,255,0.06); }
-.style-btn.active { background:rgba(167,139,250,0.14); border-color:rgba(167,139,250,0.45); color:var(--accent); }
 
 /* ── Theme swatches ── */
 .theme-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; }
@@ -330,14 +350,34 @@ input[type=range]::-moz-range-thumb {
   z-index:100; white-space:nowrap;
 }
 #toast.show { transform:translateX(-50%) translateY(0); }
+
+@media (max-width: 1100px) {
+  #topbar { height:48px; }
+  #workspace {
+    display:grid;
+    grid-template-columns:1fr;
+    grid-template-rows:auto minmax(42vh, 1fr) auto;
+  }
+  .sidebar {
+    width:100%;
+    max-height:34vh;
+    border:none;
+    border-top:1px solid var(--panel-border);
+  }
+  #sidebar-left { order:1; }
+  #canvas-wrap { order:2; min-height:42vh; }
+  #sidebar-right { order:3; }
+}
 </style>
 </head>
 <body>
 <div id="app">
-  <div id="canvas-wrap"><canvas id="c"></canvas></div>
-
-  <div id="sidebar">
-    <div class="logo"><div class="logo-dot"></div>Liquid Shape</div>
+  <header id="topbar">
+    <div class="topbar-title">Liquid Shape Maker</div>
+    <div class="topbar-meta">build by @mertoker</div>
+  </header>
+  <div id="workspace">
+  <div id="sidebar-left" class="sidebar">
 
     <!-- SHAPE -->
     <div class="sec">
@@ -394,16 +434,6 @@ input[type=range]::-moz-range-thumb {
       </div>
     </div>
 
-    <!-- SURFACE STYLE -->
-    <div class="sec">
-      <div class="sec-label">Surface</div>
-      <div class="style-row">
-        <button class="style-btn active" data-style="smooth">Liquid / Smooth</button>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
     <!-- THEMES -->
     <div class="sec">
       <div class="sec-label">Theme</div>
@@ -425,11 +455,49 @@ input[type=range]::-moz-range-thumb {
       </div>
     </div>
 
+    <!-- SCENE -->
+    <div class="sec">
+      <div class="sec-label">Scene</div>
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+        <div class="color-item" style="flex-shrink:0">
+          <label>Bg</label>
+          <input type="color" id="bgColor" value="#000000" style="width:44px;">
+        </div>
+        <div style="flex:1;">
+          <div class="toggle-row" style="margin-bottom:0;">
+            <span class="toggle-label">Transparent PNG + Grid Preview</span>
+            <label class="toggle"><input type="checkbox" id="pngTransparent"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- COLORS -->
     <div class="sec">
       <div class="sec-label">Color Palette</div>
       <div class="color-grid" id="color-grid">
         <!-- filled dynamically by JS -->
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+  </div><!-- /sidebar-left -->
+
+  <div id="canvas-wrap"><canvas id="c"></canvas></div>
+
+  <div id="sidebar-right" class="sidebar">
+
+    <!-- PERFORMANCE -->
+    <div class="sec">
+      <div class="sec-label">Performance</div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Geometry Quality</span></div>
+        <select class="styled-select" id="geoQuality">
+          <option value="legacy" selected>Legacy (Exact)</option>
+          <option value="balanced">Balanced</option>
+          <option value="low">Low</option>
+        </select>
       </div>
     </div>
 
@@ -490,8 +558,38 @@ input[type=range]::-moz-range-thumb {
         <input type="range" id="colorWarp" min="0" max="1" step="0.01" value="0.4">
       </div>
       <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Linear Fluidity</span><span class="slider-val" id="linearFluidity-val">0.7</span></div>
+        <input type="range" id="linearFluidity" min="0" max="1" step="0.01" value="0.7">
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Netlik (Clarity)</span><span class="slider-val" id="clarity-val">0.0</span></div>
+        <input type="range" id="clarity" min="0" max="1" step="0.01" value="0.0">
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Ultra Sharp (f22)</span>
+        <label class="toggle"><input type="checkbox" id="ultraSharpToggle"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="slider-wrap">
         <div class="slider-header"><span class="slider-label">Fresnel Edge</span><span class="slider-val" id="fresnel-val">0.5</span></div>
         <input type="range" id="fresnelIntensity" min="0" max="2" step="0.05" value="0.5">
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Fresnel Distribution</span></div>
+        <select class="styled-select" id="fresnelMode">
+          <option value="all" selected>All Around (Uniform)</option>
+          <option value="directional">Directional (One Side)</option>
+        </select>
+      </div>
+      <div class="slider-wrap" id="fresnelDirectionWrap" style="display:none;">
+        <div class="slider-header"><span class="slider-label">Fresnel Direction</span></div>
+        <select class="styled-select" id="fresnelDirection">
+          <option value="right" selected>Right</option>
+          <option value="left">Left</option>
+          <option value="top">Top</option>
+          <option value="bottom">Bottom</option>
+          <option value="front">Front</option>
+          <option value="back">Back</option>
+        </select>
       </div>
       <div class="slider-wrap">
         <div class="slider-header"><span class="slider-label">Light Brightness</span><span class="slider-val" id="lightBrightness-val">1.0</span></div>
@@ -500,6 +598,24 @@ input[type=range]::-moz-range-thumb {
       <div class="slider-wrap">
         <div class="slider-header"><span class="slider-label">Light Scale</span><span class="slider-val" id="lightScale-val">5.0</span></div>
         <input type="range" id="lightScale" min="1" max="20" step="0.5" value="5.0">
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Light Distribution</span></div>
+        <select class="styled-select" id="lightMode">
+          <option value="all" selected>All Around (Balanced)</option>
+          <option value="directional">Directional (One Side)</option>
+        </select>
+      </div>
+      <div class="slider-wrap" id="lightDirectionWrap" style="display:none;">
+        <div class="slider-header"><span class="slider-label">Light Direction</span></div>
+        <select class="styled-select" id="lightDirection">
+          <option value="right" selected>Right</option>
+          <option value="left">Left</option>
+          <option value="top">Top</option>
+          <option value="bottom">Bottom</option>
+          <option value="front">Front</option>
+          <option value="back">Back</option>
+        </select>
       </div>
     </div>
 
@@ -685,12 +801,43 @@ input[type=range]::-moz-range-thumb {
     <!-- EXPORT -->
     <div class="sec">
       <div class="sec-label">Export</div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Image Scale</span></div>
+        <select class="styled-select" id="exportScale">
+          <option value="1" selected>1x</option>
+          <option value="2">2x</option>
+          <option value="3">3x</option>
+        </select>
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Video Format</span></div>
+        <select class="styled-select" id="videoFormat">
+          <option value="webm" selected>WebM</option>
+          <option value="mp4">MP4 (if browser supports)</option>
+        </select>
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Video Duration</span><span class="slider-val" id="videoDuration-val">8.0s</span></div>
+        <input type="range" id="videoDuration" min="2" max="20" step="0.5" value="8">
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Video FPS</span><span class="slider-val" id="videoFps-val">60</span></div>
+        <input type="range" id="videoFps" min="24" max="60" step="1" value="60">
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-header"><span class="slider-label">Video Mbps</span><span class="slider-val" id="videoBitrate-val">8.0</span></div>
+        <input type="range" id="videoBitrate" min="2" max="20" step="0.5" value="8">
+      </div>
       <div class="btn-row">
         <button class="btn" id="export-png">PNG</button>
         <button class="btn" id="export-jpg">JPEG</button>
+        <button class="btn" id="export-webp">WebP</button>
       </div>
       <div class="btn-row">
-        <button class="btn primary" id="export-video">● Record WebM</button>
+        <button class="btn" id="export-svg">SVG*</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="export-video">● Record Video</button>
       </div>
     </div>
 
@@ -698,7 +845,8 @@ input[type=range]::-moz-range-thumb {
       <div class="status-row"><span>fps</span><span id="fps-val">—</span></div>
       <div class="status-row"><span>time</span><span id="time-val">0.0s</span></div>
     </div>
-  </div><!-- /sidebar -->
+  </div><!-- /sidebar-right -->
+  </div><!-- /workspace -->
 </div><!-- /app -->
 
 <div id="toast"></div>
@@ -797,6 +945,7 @@ const vertexShader = `
   uniform float uStyle;
 
   varying vec3 vNormal;
+  varying vec3 vNormalView;
   varying vec3 vPosition;
   varying vec3 vViewDir;
 
@@ -838,15 +987,19 @@ const vertexShader = `
 
     // Liquid: recalculate normals from displacement gradient → smooth shading
     // Organic/Crystal: keep original face normals → sharp faceted look
+    vec3 localNormal;
     if(uStyle < 0.5){
       float eps = 0.1;
       float dx = getDisplacement(position+vec3(eps,0,0)) - getDisplacement(position-vec3(eps,0,0));
       float dy = getDisplacement(position+vec3(0,eps,0)) - getDisplacement(position-vec3(0,eps,0));
       float dz = getDisplacement(position+vec3(0,0,eps)) - getDisplacement(position-vec3(0,0,eps));
-      vNormal = normalize(normal - vec3(dx,dy,dz)/(2.0*eps));
+      localNormal = normalize(normal - vec3(dx,dy,dz)/(2.0*eps));
     } else {
-      vNormal = normal;
+      localNormal = normal;
     }
+
+    vNormal = localNormal;
+    vNormalView = normalize(normalMatrix * localNormal);
 
     vec4 mvPos = modelViewMatrix * vec4(newPos, 1.0);
     vViewDir = normalize(-mvPos.xyz);
@@ -861,7 +1014,14 @@ const fragmentShader = `
   uniform float uTime;
   uniform float uLightBrightness, uLightScale;
   uniform float uColorWarp, uGradientType;
+  uniform float uLinearFluidity;
+  uniform float uClarity;
+  uniform float uUltraSharp;
   uniform float uFresnelIntensity;
+  uniform float uFresnelMode;
+  uniform vec3  uFresnelDir;
+  uniform float uLightMode;
+  uniform vec3  uLightDir;
   uniform float uNoiseIntensity, uNoiseScale;
   // Fluid Glass
   uniform float uFluidSwirl;
@@ -883,6 +1043,7 @@ const fragmentShader = `
   uniform float uMetallicLayer; // 0=off, 1=on
 
   varying vec3 vNormal;
+  varying vec3 vNormalView;
   varying vec3 vPosition;
   varying vec3 vViewDir;
 
@@ -913,6 +1074,15 @@ const fragmentShader = `
     float n2 = snoise(p * 1.8  - time * 0.07 * swirl + vec3(1.7, 0.4, 2.1));
     float n3 = snoise(p * 0.45 + time * 0.04 * swirl + vec3(3.3, 1.1, 0.8));
     return (n1*0.50 + n2*0.32 + n3*0.18) * 0.5 + 0.5;
+  }
+
+  float fbm3(vec3 p){
+    float f = 0.0;
+    float a = 0.5;
+    f += a * snoise(p); p *= 2.02; a *= 0.5;
+    f += a * snoise(p); p *= 2.03; a *= 0.5;
+    f += a * snoise(p);
+    return f;
   }
 
   // ── Thin-film iridescence ─────────────────────────────
@@ -954,9 +1124,18 @@ const fragmentShader = `
     float warpN = snoise(vPosition*2.0 + uTime*0.2);
 
     if(uGradientType < 0.5){
-      // ── Linear ───────────────────────────────────────────
-      float linear = vPosition.y*0.5 + 0.5;
-      colorT = clamp(linear + warpN*uColorWarp, 0.0, 1.0);
+      // ── Linear (fluidized) ───────────────────────────────
+      float baseLinear = vPosition.y * 0.5 + 0.5;
+      float fluidity = clamp(uLinearFluidity, 0.0, 1.0);
+      float flowA = fbm3(vPosition * 1.15 + vec3(uTime * 0.08, -uTime * 0.06, uTime * 0.05));
+      float flowB = snoise(vPosition * 2.6 + vec3(0.0, uTime * 0.14, uTime * 0.11));
+      float sideX = vPosition.x * 0.5 + 0.5;
+      float sideZ = vPosition.z * 0.5 + 0.5;
+      float sideBlend = mix(baseLinear, sideX, 0.14 * fluidity + 0.12 * fluidity * (flowA * 0.5 + 0.5));
+      sideBlend = mix(sideBlend, sideZ, 0.10 * fluidity + 0.10 * fluidity * (flowB * 0.5 + 0.5));
+      float fluidWarp = (flowA * 0.23 + flowB * 0.14) * fluidity;
+      float colorWarpMix = warpN * uColorWarp * mix(0.55, 1.05, fluidity);
+      colorT = clamp(mix(baseLinear, sideBlend, fluidity) + fluidWarp + colorWarpMix, 0.0, 1.0);
 
     } else if(uGradientType < 1.5){
       // ── Radial ───────────────────────────────────────────
@@ -1059,10 +1238,25 @@ const fragmentShader = `
       base = mix(base, base*noiseV, uNoiseIntensity);
     }
 
+    // ── Clarity boost (micro highlights + local contrast) ─
+    // Default uClarity=0 keeps legacy look unchanged.
+    if(uClarity > 0.001){
+      float microA = abs(snoise(vPosition * 18.0 + vec3(uTime * 0.03)));
+      float microB = abs(snoise(vPosition * 31.0 - vec3(uTime * 0.02)));
+      float micro = smoothstep(0.65, 0.92, microA * 0.62 + microB * 0.38);
+      base = mix(base, vec3(1.0), micro * uClarity * 0.22);
+      base = clamp((base - 0.5) * (1.0 + uClarity * 0.55) + 0.5, 0.0, 1.0);
+    }
+
     // ── MATERIAL SYSTEM ───────────────────────────────────
     vec3 L  = normalize(vec3(1.5, 2.0, 1.2));
     vec3 L2 = normalize(vec3(-1.2, -0.5, 1.0));  // fill light
+    if(uLightMode > 0.5){
+      L  = normalize(uLightDir);
+      L2 = normalize(-uLightDir);
+    }
     vec3 H  = normalize(L + V);
+    vec3 H2 = normalize(L2 + V);
     float NdotL  = max(0.0, dot(N, L));
     float NdotL2 = max(0.0, dot(N, L2));
 
@@ -1070,17 +1264,22 @@ const fragmentShader = `
     float roughSpec = mix(uSpecPow, 2.0, uRoughness);
 
     // Diffuse: Lambertian + fill light, reduced by roughness
-    float diffuse = NdotL * 0.8 + NdotL2 * 0.15 + 0.18; // soft ambient
+    float fillWeight = (uLightMode > 0.5) ? 0.06 : 0.15;
+    float diffuse = NdotL * 0.8 + NdotL2 * fillWeight + 0.18; // soft ambient
     // Matte: increase diffuse, kill specular
     diffuse = mix(diffuse, 1.0, uRoughness * 0.4);
 
     // Specular
     float specVal = pow(max(0.0, dot(N, H)), roughSpec);
+    float specVal2 = pow(max(0.0, dot(N, H2)), roughSpec * 1.1);
     // Anisotropic highlight for metallic — elongated along U tangent
     vec3 T = normalize(cross(N, vec3(0.0, 1.0, 0.01))); // tangent
     float TdotH = dot(T, H);
+    float TdotH2 = dot(T, H2);
     float anisoSpec = pow(max(0.0, 1.0 - abs(TdotH)), mix(2.0, 20.0, uAniso));
+    float anisoSpec2 = pow(max(0.0, 1.0 - abs(TdotH2)), mix(2.0, 20.0, uAniso));
     specVal = mix(specVal, anisoSpec * specVal, uMetallic);
+    specVal2 = mix(specVal2, anisoSpec2 * specVal2, uMetallic);
 
     // Fuzzy / velvet: backscattering at grazing angles
     float fuzzy = pow(1.0 - NdotV, 2.5) * uFuzzyIntensity;
@@ -1094,7 +1293,9 @@ const fragmentShader = `
 
     // Specular highlight
     float specStrength = mix(0.7, 0.3, uRoughness); // rougher = dimmer spec
-    base = mix(base, vec3(1.0), clamp(specVal * specStrength, 0.0, 0.85));
+    float secondarySpecWeight = (uLightMode > 0.5) ? 0.08 : 0.35;
+    float specTotal = (specVal + specVal2 * secondarySpecWeight) * specStrength;
+    base = mix(base, vec3(1.0), clamp(specTotal, 0.0, 0.85));
 
     // ── Metallic env reflection layer ─────────────────────
     if(uMetallicLayer > 0.5){
@@ -1109,12 +1310,29 @@ const fragmentShader = `
     }
 
     // ── Fresnel rim ───────────────────────────────────────
+    vec3 Nf = normalize(vNormalView);
+    float NdotVf = max(0.0, dot(Nf, V));
     float fresnelPow = (uGradientType > 1.5) ? 2.2 : mix(3.0, 1.8, uMetallic);
-    float fresnel = pow(1.0 - NdotV, fresnelPow);
+    float fresnel = pow(1.0 - NdotVf, fresnelPow);
+    if(uFresnelMode > 0.5){
+      float hemi = dot(Nf, normalize(uFresnelDir)) * 0.5 + 0.5;
+      float directionalMask = smoothstep(0.25, 0.95, hemi);
+      fresnel *= directionalMask;
+    }
     vec3 fresnelCol = (uGradientType > 1.5)
       ? mix(vec3(0.80, 0.88, 1.0), vec3(1.0), 0.4)
       : mix(vec3(1.0), base * 1.4, uMetallic * 0.5);
     base = mix(base, fresnelCol, clamp(fresnel * uFresnelIntensity, 0.0, 0.92));
+
+    // ── Ultra Sharp mode (visible but palette-preserving) ─
+    if(uUltraSharp > 0.5){
+      float luma = dot(base, vec3(0.2126, 0.7152, 0.0722));
+      float edge = clamp((abs(dFdx(luma)) + abs(dFdy(luma))) * 7.0, 0.0, 1.0);
+      float contrast = 1.0 + 0.18 + edge * 0.35;
+      vec3 sharpened = clamp((base - 0.5) * contrast + 0.5, 0.0, 1.0);
+      float amount = 0.28 + edge * 0.30;
+      base = mix(base, sharpened, amount);
+    }
 
     base = clamp(base, 0.0, 1.0);
 
@@ -1165,7 +1383,7 @@ const THEMES = [
 const canvas   = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true, preserveDrawingBuffer:true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setClearColor(0x000000, 0);
+renderer.setClearColor(0x000000, 1);
 
 const scene  = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
@@ -1186,6 +1404,22 @@ function resize(){
 resize();
 new ResizeObserver(resize).observe(canvas.parentElement);
 
+let sceneBgColor = '#000000';
+let pngTransparentPreview = false;
+const canvasWrap = document.getElementById('canvas-wrap');
+
+function applyCanvasAlphaMode(){
+  canvasWrap.classList.toggle('transparent-preview', pngTransparentPreview);
+  renderer.setClearColor(new THREE.Color(sceneBgColor), pngTransparentPreview ? 0 : 1);
+}
+
+function applySceneBackground(hex){
+  sceneBgColor = hex;
+  document.documentElement.style.setProperty('--scene-bg', hex);
+  applyCanvasAlphaMode();
+}
+applySceneBackground(sceneBgColor);
+
 // ── Uniforms ─────────────────────────────────────────────
 const uniforms = {
   uTime:             { value:0 },
@@ -1193,8 +1427,15 @@ const uniforms = {
   uTurbulence:       { value:0.0 },
   uStyle:            { value:0.0 },
   uColorWarp:        { value:0.4 },
+  uLinearFluidity:   { value:0.7 },
+  uClarity:          { value:0.0 },
+  uUltraSharp:       { value:0.0 },
   uGradientType:     { value:0.0 },
   uFresnelIntensity: { value:0.5 },
+  uFresnelMode:      { value:0.0 },
+  uFresnelDir:       { value:new THREE.Vector3(1, 0, 0) },
+  uLightMode:        { value:0.0 },
+  uLightDir:         { value:new THREE.Vector3(1, 0, 0) },
   uLightBrightness:  { value:1.0 },
   uLightScale:       { value:5.0 },
   uNoiseIntensity:   { value:0.0 },
@@ -1241,6 +1482,7 @@ const uniforms = {
 // ── Outer color layer material (transparent, FrontSide only) ──
 const material = new THREE.ShaderMaterial({
   vertexShader, fragmentShader, uniforms,
+  extensions:     { derivatives: true },
   transparent:    true,
   depthWrite:     false,
   depthTest:      true,
@@ -1369,20 +1611,61 @@ function makeStarGeometry(spikes, outerR, innerR, height, segs){
 }
 
 // ── Geometry factory ──────────────────────────────────────
-function createGeometry(type){
+const GEO_QUALITY_PROFILES = {
+  legacy: {
+    ico: 64,
+    rounded: 60,
+    torusRadial: 64,
+    torusTubular: 120,
+    coneRadial: 80,
+    coneHeight: 40,
+    knotTubular: 160,
+    knotRadialA: 32,
+    knotRadialB: 28,
+  },
+  balanced: {
+    ico: 44,
+    rounded: 40,
+    torusRadial: 44,
+    torusTubular: 86,
+    coneRadial: 56,
+    coneHeight: 24,
+    knotTubular: 110,
+    knotRadialA: 22,
+    knotRadialB: 18,
+  },
+  low: {
+    ico: 28,
+    rounded: 28,
+    torusRadial: 30,
+    torusTubular: 62,
+    coneRadial: 36,
+    coneHeight: 16,
+    knotTubular: 78,
+    knotRadialA: 16,
+    knotRadialB: 14,
+  },
+};
+
+const geometryCache = new Map();
+let geometryQuality = 'legacy';
+let currentShape = 'sphere';
+
+function createGeometry(type, quality){
+  const q = GEO_QUALITY_PROFILES[quality] || GEO_QUALITY_PROFILES.legacy;
   let g;
   switch(type){
 
     case 'sphere':
-      g = new THREE.IcosahedronGeometry(1.2, 64); break;
+      g = new THREE.IcosahedronGeometry(1.2, q.ico); break;
 
     // Rounded cube — sphere projected into box via SDF
     case 'rcube':
-      g = makeRoundedBox(2.2, 0.42, 60); break;
+      g = makeRoundedBox(2.2, 0.42, q.rounded); break;
 
     // Rounded tablet / pill — wide flat rounded box
     case 'rtablet': {
-      g = makeRoundedBox(2.2, 0.55, 60);
+      g = makeRoundedBox(2.2, 0.55, q.rounded);
       const pos = g.attributes.position;
       for(let i = 0; i < pos.count; i++){
         pos.setY(i, pos.getY(i) * 0.52);
@@ -1392,10 +1675,10 @@ function createGeometry(type){
     }
 
     case 'torus':
-      g = new THREE.TorusGeometry(1.0, 0.38, 64, 120); break;
+      g = new THREE.TorusGeometry(1.0, 0.38, q.torusRadial, q.torusTubular); break;
 
     case 'egg': {
-      g = new THREE.IcosahedronGeometry(1.2, 64);
+      g = new THREE.IcosahedronGeometry(1.2, q.ico);
       const pos = g.attributes.position;
       for(let i = 0; i < pos.count; i++){
         const y = pos.getY(i);
@@ -1411,7 +1694,7 @@ function createGeometry(type){
 
     // Capsule: cylinder with hemisphere caps (built from sphere + scale)
     case 'capsule': {
-      g = new THREE.IcosahedronGeometry(1.0, 64);
+      g = new THREE.IcosahedronGeometry(1.0, q.ico);
       const pos = g.attributes.position;
       for(let i = 0; i < pos.count; i++){
         const y = pos.getY(i);
@@ -1424,12 +1707,12 @@ function createGeometry(type){
 
     // Cone — smooth SphereGeometry capped
     case 'cone':
-      g = new THREE.ConeGeometry(1.2, 2.4, 80, 40, false);
+      g = new THREE.ConeGeometry(1.2, 2.4, q.coneRadial, q.coneHeight, false);
       g.computeVertexNormals(); break;
 
     // Hemisphere / dome
     case 'hemisphere': {
-      g = new THREE.IcosahedronGeometry(1.3, 64);
+      g = new THREE.IcosahedronGeometry(1.3, q.ico);
       const pos = g.attributes.position;
       for(let i = 0; i < pos.count; i++){
         if(pos.getY(i) < 0) pos.setY(i, 0); // clip bottom hemisphere
@@ -1439,11 +1722,11 @@ function createGeometry(type){
 
     // Trefoil knot
     case 'trefoil':
-      g = new THREE.TorusKnotGeometry(1.0, 0.34, 160, 32, 2, 3); break;
+      g = new THREE.TorusKnotGeometry(1.0, 0.34, q.knotTubular, q.knotRadialA, 2, 3); break;
 
     // Twisted torus — torus knot with twist
     case 'twist':
-      g = new THREE.TorusKnotGeometry(0.9, 0.30, 160, 28, 3, 4); break;
+      g = new THREE.TorusKnotGeometry(0.9, 0.30, q.knotTubular, q.knotRadialB, 3, 4); break;
 
     // 3D Star
     case 'star': {
@@ -1454,11 +1737,11 @@ function createGeometry(type){
 
     // Link / chain knot
     case 'chain':
-      g = new THREE.TorusKnotGeometry(1.0, 0.24, 160, 28, 3, 2); break;
+      g = new THREE.TorusKnotGeometry(1.0, 0.24, q.knotTubular, q.knotRadialB, 3, 2); break;
 
     // Crystal kept in JS for organic mode (not in UI but usable)
     case 'crystal': {
-      g = new THREE.IcosahedronGeometry(1.3, 64);
+      g = new THREE.IcosahedronGeometry(1.3, q.ico);
       const pos = g.attributes.position;
       const v = new THREE.Vector3();
       for(let i=0;i<pos.count;i++){
@@ -1471,7 +1754,7 @@ function createGeometry(type){
     }
 
     default:
-      g = new THREE.IcosahedronGeometry(1.2, 64);
+      g = new THREE.IcosahedronGeometry(1.2, q.ico);
   }
   return g;
 }
@@ -1479,13 +1762,23 @@ function createGeometry(type){
 let innerMesh = null;
 let outerMesh = null;
 
+function getGeometryTemplate(type, quality){
+  const key = `${type}:${quality}`;
+  if(!geometryCache.has(key)){
+    geometryCache.set(key, createGeometry(type, quality));
+  }
+  return geometryCache.get(key);
+}
+
 function setShape(type){
+  currentShape = type;
   // Remove old meshes
   if(innerMesh){ scene.remove(innerMesh); innerMesh.geometry.dispose(); }
   if(outerMesh){ scene.remove(outerMesh); outerMesh.geometry.dispose(); }
 
-  const geom = createGeometry(type);
-  const geomClone = geom.clone(); // inner and outer share same shape but separate geometry instances
+  const template = getGeometryTemplate(type, geometryQuality);
+  const geom = template.clone();
+  const geomClone = template.clone();
 
   // Inner: opaque base color, renders first
   innerMesh = new THREE.Mesh(geom, innerMaterial);
@@ -1498,7 +1791,7 @@ function setShape(type){
   scene.add(innerMesh);
   scene.add(outerMesh);
 }
-setShape('sphere');
+setShape(currentShape);
 
 // Keep both meshes rotation in sync — we'll drive innerMesh, copy to outer
 function syncMeshRotation(dt){
@@ -1547,13 +1840,34 @@ document.querySelectorAll('.shape-btn').forEach(btn=>{
   });
 });
 
-// Style buttons
-document.querySelectorAll('.style-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.style-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    uniforms.uStyle.value = btn.dataset.style==='smooth' ? 0.0 : 1.0;
-  });
+// Scene background picker
+const bgColorInput = document.getElementById('bgColor');
+bgColorInput.value = '#000000';
+bgColorInput.addEventListener('input', e => {
+  applySceneBackground(e.target.value);
+});
+document.getElementById('pngTransparent').addEventListener('change', e => {
+  pngTransparentPreview = e.target.checked;
+  applyCanvasAlphaMode();
+});
+
+// Geometry quality (legacy is exact current look)
+const geoQualitySelect = document.getElementById('geoQuality');
+geoQualitySelect.addEventListener('change', e => {
+  const selected = e.target.value;
+  if(!GEO_QUALITY_PROFILES[selected]) return;
+  geometryQuality = selected;
+  setShape(currentShape);
+  toast(`Geometry quality: ${selected}`);
+});
+
+function applyUltraSharpMode(enabled){
+  uniforms.uUltraSharp.value = enabled ? 1.0 : 0.0;
+  toast(enabled ? 'Ultra Sharp enabled.' : 'Ultra Sharp disabled.');
+}
+
+document.getElementById('ultraSharpToggle').addEventListener('change', e => {
+  applyUltraSharpMode(e.target.checked);
 });
 
 // ── Dynamic color palette system ─────────────────────────
@@ -1742,6 +2056,58 @@ document.getElementById('gradientType').addEventListener('change',e=>{
   }
 });
 
+const DIRECTION_PRESETS = {
+  right:  new THREE.Vector3(1, 0, 0),
+  left:   new THREE.Vector3(-1, 0, 0),
+  top:    new THREE.Vector3(0, 1, 0),
+  bottom: new THREE.Vector3(0, -1, 0),
+  front:  new THREE.Vector3(0, 0, 1),
+  back:   new THREE.Vector3(0, 0, -1),
+};
+
+function applyFresnelMode(mode){
+  const directional = mode === 'directional';
+  uniforms.uFresnelMode.value = directional ? 1.0 : 0.0;
+  document.getElementById('fresnelDirectionWrap').style.display = directional ? 'block' : 'none';
+}
+
+function applyFresnelDirection(dir){
+  const next = DIRECTION_PRESETS[dir] || DIRECTION_PRESETS.right;
+  uniforms.uFresnelDir.value.copy(next);
+}
+
+function applyLightMode(mode){
+  const directional = mode === 'directional';
+  uniforms.uLightMode.value = directional ? 1.0 : 0.0;
+  document.getElementById('lightDirectionWrap').style.display = directional ? 'block' : 'none';
+}
+
+function applyLightDirection(dir){
+  const next = DIRECTION_PRESETS[dir] || DIRECTION_PRESETS.right;
+  uniforms.uLightDir.value.copy(next);
+}
+
+document.getElementById('fresnelMode').addEventListener('change', e => {
+  applyFresnelMode(e.target.value);
+});
+
+document.getElementById('fresnelDirection').addEventListener('change', e => {
+  applyFresnelDirection(e.target.value);
+});
+
+document.getElementById('lightMode').addEventListener('change', e => {
+  applyLightMode(e.target.value);
+});
+
+document.getElementById('lightDirection').addEventListener('change', e => {
+  applyLightDirection(e.target.value);
+});
+
+applyFresnelMode(document.getElementById('fresnelMode').value);
+applyFresnelDirection(document.getElementById('fresnelDirection').value);
+applyLightMode(document.getElementById('lightMode').value);
+applyLightDirection(document.getElementById('lightDirection').value);
+
 // Generic slider binder
 function bindSlider(id, displayId, setter){
   const el=document.getElementById(id), disp=document.getElementById(displayId);
@@ -1778,12 +2144,50 @@ bindSlider('chromaticAb', 'chromaticAb-val', v=>uniforms.uChromaticAb.value=v);
 bindSlider('foldLines',   'foldLines-val',   v=>uniforms.uFoldLines.value=v);
 
 bindSlider('colorWarp',       'colorWarp-val',       v=>uniforms.uColorWarp.value=v);
+bindSlider('linearFluidity',  'linearFluidity-val',  v=>uniforms.uLinearFluidity.value=v);
+bindSlider('clarity',         'clarity-val',         v=>uniforms.uClarity.value=v);
 bindSlider('fresnelIntensity','fresnel-val',          v=>uniforms.uFresnelIntensity.value=v);
 bindSlider('lightBrightness', 'lightBrightness-val',  v=>uniforms.uLightBrightness.value=v);
 bindSlider('lightScale',      'lightScale-val',       v=>uniforms.uLightScale.value=v);
 bindSlider('speed',           'speed-val',            v=>speedMult=v);
 bindSlider('distortion',      'distortion-val',       v=>uniforms.uDistortion.value=v);
 bindSlider('turbulence',      'turbulence-val',       v=>uniforms.uTurbulence.value=v);
+
+const exportSettings = {
+  imageScale: 1,
+  videoFormat: 'webm',
+  durationSec: 8,
+  fps: 60,
+  bitrateMbps: 8,
+};
+
+function bindExportSlider(id, labelId, formatter, setter){
+  const input = document.getElementById(id);
+  const label = document.getElementById(labelId);
+  input.addEventListener('input', () => {
+    const value = parseFloat(input.value);
+    label.textContent = formatter(value);
+    setter(value);
+  });
+}
+
+bindExportSlider('videoDuration', 'videoDuration-val', v => `${v.toFixed(1)}s`, v => {
+  exportSettings.durationSec = v;
+});
+bindExportSlider('videoFps', 'videoFps-val', v => `${Math.round(v)}`, v => {
+  exportSettings.fps = Math.round(v);
+});
+bindExportSlider('videoBitrate', 'videoBitrate-val', v => `${v.toFixed(1)}`, v => {
+  exportSettings.bitrateMbps = v;
+});
+
+document.getElementById('exportScale').addEventListener('change', e => {
+  exportSettings.imageScale = Math.max(1, Math.min(3, parseInt(e.target.value, 10) || 1));
+});
+
+document.getElementById('videoFormat').addEventListener('change', e => {
+  exportSettings.videoFormat = e.target.value === 'mp4' ? 'mp4' : 'webm';
+});
 // ── Effect groups: accordion + intensity badge + slider binding ──
 function bindFxGroup(groupId, badgeId, intensityId, intensityDisplayId, intensityUniform, extraBindings){
   const group   = document.getElementById(groupId);
@@ -1852,48 +2256,213 @@ function toast(msg){
 }
 
 // ── Export ───────────────────────────────────────────────
+function renderNow(){
+  orbitControls.update();
+  renderer.render(scene, camera);
+}
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function beginCapture(transparent, scale){
+  const prevColor = renderer.getClearColor(new THREE.Color()).clone();
+  const prevAlpha = renderer.getClearAlpha();
+  const prevDpr = renderer.getPixelRatio();
+  const prevSize = renderer.getSize(new THREE.Vector2());
+  const safeScale = Math.max(1, Math.min(3, scale || 1));
+
+  if(safeScale !== 1){
+    renderer.setPixelRatio(prevDpr * safeScale);
+    renderer.setSize(prevSize.x, prevSize.y, false);
+  }
+  renderer.setClearColor(new THREE.Color(sceneBgColor), transparent ? 0 : 1);
+  renderNow();
+  return () => {
+    if(safeScale !== 1){
+      renderer.setPixelRatio(prevDpr);
+      renderer.setSize(prevSize.x, prevSize.y, false);
+    }
+    renderer.setClearColor(prevColor, prevAlpha);
+    renderNow();
+  };
+}
+
 function exportImage(type){
-  renderer.render(scene,camera);
+  const wantTransparent = (type === 'image/png' || type === 'image/webp') && document.getElementById('pngTransparent').checked;
+  const restoreRender = beginCapture(wantTransparent, exportSettings.imageScale);
+  const quality = type === 'image/png' ? undefined : 1.0;
+
   canvas.toBlob(blob=>{
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url; a.download=`liquid-shape.${type==='image/jpeg'?'jpg':'png'}`;
-    a.click(); URL.revokeObjectURL(url);
-    toast(`Saved as ${a.download}`);
-  }, type, 0.96);
+    restoreRender();
+    if(!blob){
+      if(type === 'image/webp'){
+        toast('WebP unsupported, falling back to PNG.');
+        exportImage('image/png');
+        return;
+      }
+      toast('Export failed.');
+      return;
+    }
+    const ext = type === 'image/jpeg' ? 'jpg' : type === 'image/webp' ? 'webp' : 'png';
+    const filename = `liquid-shape.${ext}`;
+    downloadBlob(blob, filename);
+    toast(`Saved as ${filename}`);
+  }, type, quality);
 }
 document.getElementById('export-png').addEventListener('click',()=>exportImage('image/png'));
 document.getElementById('export-jpg').addEventListener('click',()=>exportImage('image/jpeg'));
+document.getElementById('export-webp').addEventListener('click',()=>exportImage('image/webp'));
+document.getElementById('export-svg').addEventListener('click', () => {
+  const wantTransparent = document.getElementById('pngTransparent').checked;
+  const restoreRender = beginCapture(wantTransparent, exportSettings.imageScale);
+  try {
+    const width = canvas.width;
+    const height = canvas.height;
+    const pngData = canvas.toDataURL('image/png');
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <image href="${pngData}" width="${width}" height="${height}" />
+</svg>
+`;
+    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+    downloadBlob(blob, 'liquid-shape.svg');
+    toast('SVG saved (embedded bitmap).');
+  } catch (error) {
+    toast('SVG export failed.');
+  } finally {
+    restoreRender();
+  }
+});
 
 // WebM video
-let mediaRecorder=null, chunks=[];
-const recBtn=document.getElementById('export-video');
-const recDot=document.getElementById('rec-dot');
+let mediaRecorder = null;
+let chunks = [];
+let recordStopTimer = null;
+const recBtn = document.getElementById('export-video');
+const recDot = document.getElementById('rec-dot');
 
-recBtn.addEventListener('click',()=>{
-  if(mediaRecorder && mediaRecorder.state==='recording'){
+function getPreferredVideoMime(format){
+  const webmCandidates = [
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8,opus',
+    'video/webm;codecs=vp8',
+    'video/webm',
+  ];
+  const mp4Candidates = [
+    'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+    'video/mp4;codecs=avc1',
+    'video/mp4',
+  ];
+  const pick = (types) => types.find(type => MediaRecorder.isTypeSupported(type)) || '';
+
+  if(format === 'mp4'){
+    return pick(mp4Candidates) || pick(webmCandidates);
+  }
+  return pick(webmCandidates) || pick(mp4Candidates);
+}
+
+function setRecordingUI(recording){
+  recBtn.textContent = recording ? '■ Stop Recording' : '● Record Video';
+  recBtn.classList.toggle('danger', recording);
+  recBtn.classList.toggle('primary', !recording);
+  recDot.style.display = recording ? 'block' : 'none';
+}
+
+function stopRecording(){
+  if(recordStopTimer){
+    clearTimeout(recordStopTimer);
+    recordStopTimer = null;
+  }
+  if(mediaRecorder && mediaRecorder.state === 'recording'){
     mediaRecorder.stop();
-    recBtn.textContent='● Record WebM';
-    recBtn.classList.remove('danger'); recBtn.classList.add('primary');
-    recDot.style.display='none';
+  } else {
+    setRecordingUI(false);
+  }
+}
+
+function startRecording(){
+  if(typeof MediaRecorder === 'undefined'){
+    toast('MediaRecorder not supported in this browser.');
     return;
   }
-  chunks=[];
-  const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-    ? 'video/webm;codecs=vp9' : 'video/webm';
-  mediaRecorder=new MediaRecorder(canvas.captureStream(60),{mimeType:mime,videoBitsPerSecond:8_000_000});
-  mediaRecorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
-  mediaRecorder.onstop=()=>{
-    const blob=new Blob(chunks,{type:mime});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download='liquid-shape.webm'; a.click();
-    URL.revokeObjectURL(url); toast('Video saved → liquid-shape.webm'); mediaRecorder=null;
+  if(typeof canvas.captureStream !== 'function'){
+    toast('Canvas captureStream is not supported in this browser.');
+    return;
+  }
+
+  const requestedFormat = exportSettings.videoFormat;
+  const mime = getPreferredVideoMime(requestedFormat);
+  if(!mime){
+    toast('No supported video codec found.');
+    return;
+  }
+  const extension = mime.includes('mp4') ? 'mp4' : 'webm';
+  if(requestedFormat === 'mp4' && extension !== 'mp4'){
+    toast('MP4 unsupported, falling back to WebM.');
+  }
+
+  const fps = Math.max(1, Math.round(exportSettings.fps));
+  const durationMs = Math.max(500, Math.round(exportSettings.durationSec * 1000));
+  const bitrate = Math.max(1_000_000, Math.round(exportSettings.bitrateMbps * 1_000_000));
+
+  chunks = [];
+  renderNow();
+
+  try {
+    mediaRecorder = new MediaRecorder(canvas.captureStream(fps), {
+      mimeType: mime,
+      videoBitsPerSecond: bitrate,
+    });
+  } catch (error) {
+    toast('Could not start recorder with current settings.');
+    return;
+  }
+
+  mediaRecorder.ondataavailable = e => {
+    if(e.data.size > 0) chunks.push(e.data);
   };
-  mediaRecorder.start();
-  recBtn.textContent='■ Stop Recording';
-  recBtn.classList.remove('primary'); recBtn.classList.add('danger');
-  recDot.style.display='block';
-  setTimeout(()=>{ if(mediaRecorder&&mediaRecorder.state==='recording') recBtn.click(); },8000);
+
+  mediaRecorder.onerror = () => {
+    toast('Recording failed.');
+    setRecordingUI(false);
+    mediaRecorder = null;
+  };
+
+  mediaRecorder.onstop = () => {
+    if(recordStopTimer){
+      clearTimeout(recordStopTimer);
+      recordStopTimer = null;
+    }
+    const blob = new Blob(chunks, { type: mime });
+    if(blob.size > 0){
+      const filename = `liquid-shape.${extension}`;
+      downloadBlob(blob, filename);
+      toast(`Video saved → ${filename}`);
+    } else {
+      toast('Recording failed (empty output).');
+    }
+    mediaRecorder = null;
+    setRecordingUI(false);
+  };
+
+  mediaRecorder.start(250);
+  setRecordingUI(true);
+  recordStopTimer = setTimeout(stopRecording, durationMs);
+}
+
+recBtn.addEventListener('click', () => {
+  if(mediaRecorder && mediaRecorder.state === 'recording'){
+    stopRecording();
+    return;
+  }
+  startRecording();
 });
 </script>
 </body>
