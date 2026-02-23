@@ -369,6 +369,12 @@ input[type=range]::-moz-range-thumb {
 .export-action { margin-top:8px; }
 #export-video { width:100%; }
 #export-image-action { width:100%; }
+#exportScalePixels {
+  margin-top:6px;
+  font-size:10px;
+  color:var(--text-dim);
+  font-family:'DM Mono',monospace;
+}
 .chip-group {
   display:flex;
   flex-wrap:wrap;
@@ -557,14 +563,15 @@ input[type=range]::-moz-range-thumb {
 
 /* ── Toast ── */
 #toast {
-  position:fixed; bottom:20px; left:50%; pointer-events:none;
-  transform:translateX(-50%) translateY(60px);
+  position:fixed; top:16px; left:50%; pointer-events:none;
+  transform:translateX(-50%) translateY(-24px);
   background:rgba(20,20,36,0.96); border:1px solid rgba(167,139,250,0.3);
   color:var(--text); font-size:11px; padding:8px 18px; border-radius:30px;
-  backdrop-filter:blur(12px); transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  backdrop-filter:blur(12px); transition:transform 0.24s ease, opacity 0.24s ease;
+  opacity:0;
   z-index:100; white-space:nowrap;
 }
-#toast.show { transform:translateX(-50%) translateY(0); }
+#toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
 
 @media (max-width: 1100px) {
   #topbar { height:48px; }
@@ -1069,6 +1076,7 @@ input[type=range]::-moz-range-thumb {
           <option value="2">2x</option>
           <option value="3">3x</option>
         </select>
+        <div id="exportScalePixels">Output: —</div>
       </div>
       <div class="export-action">
         <button class="btn primary" id="export-image-action">Export Image</button>
@@ -1654,6 +1662,8 @@ const orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
 orbitControls.enableDamping = true;
 orbitControls.dampingFactor = 0.06;
 orbitControls.enableZoom = true;
+let exportScaleSelect = null;
+let exportScalePixelsEl = null;
 
 function resize(){
   const w = canvas.parentElement.clientWidth;
@@ -1661,6 +1671,7 @@ function resize(){
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
+  updateExportScaleInfo();
 }
 resize();
 new ResizeObserver(resize).observe(canvas.parentElement);
@@ -2447,6 +2458,8 @@ const codeOutput = document.getElementById('code-output');
 const codePreviewImage = document.getElementById('code-preview-image');
 const codeLoopNote = document.getElementById('code-loop-note');
 const codeBehaviorNote = document.getElementById('code-behavior-note');
+exportScaleSelect = document.getElementById('exportScale');
+exportScalePixelsEl = document.getElementById('exportScalePixels');
 let selectedVideoFormat = 'webm';
 let selectedImageFormat = 'png';
 let selectedCodeFormat = 'vanilla';
@@ -2460,11 +2473,33 @@ function setExportModalOpen(open){
   exportModal.classList.toggle('open', open);
   exportModal.setAttribute('aria-hidden', open ? 'false' : 'true');
   if(open){
+    updateExportScaleInfo();
     refreshCodeExport();
     if(currentExportTab === 'code') startCodePreviewLoop();
   } else {
     stopCodePreviewLoop();
   }
+}
+
+function updateExportScaleInfo(){
+  if(!exportScaleSelect || !exportScalePixelsEl) return;
+  const scale = Math.max(1, Math.min(3, parseInt(exportScaleSelect.value, 10) || 1));
+  let baseW = 0;
+  let baseH = 0;
+  if(typeof renderer.getDrawingBufferSize === 'function'){
+    const base = renderer.getDrawingBufferSize(new THREE.Vector2());
+    baseW = Math.round(base.x || 0);
+    baseH = Math.round(base.y || 0);
+  }
+  if(baseW <= 0 || baseH <= 0){
+    baseW = Math.round(renderer.domElement.width || canvas.clientWidth || 1);
+    baseH = Math.round(renderer.domElement.height || canvas.clientHeight || 1);
+  }
+  baseW = Math.max(1, baseW);
+  baseH = Math.max(1, baseH);
+  const outW = Math.max(1, Math.round(baseW * scale));
+  const outH = Math.max(1, Math.round(baseH * scale));
+  exportScalePixelsEl.textContent = `Output: ${outW} × ${outH}px (${scale}x of ${baseW} × ${baseH})`;
 }
 
 function setExportTab(tabId){
@@ -2748,9 +2783,11 @@ bindExportSlider('videoBitrate', 'videoBitrate-val', v => `${v.toFixed(1)}`, v =
   exportSettings.bitrateMbps = v;
 });
 
-document.getElementById('exportScale').addEventListener('change', e => {
+exportScaleSelect.addEventListener('change', e => {
   exportSettings.imageScale = Math.max(1, Math.min(3, parseInt(e.target.value, 10) || 1));
+  updateExportScaleInfo();
 });
+updateExportScaleInfo();
 
 // ── Effect groups: accordion + intensity badge + slider binding ──
 function bindFxGroup(groupId, badgeId, intensityId, intensityDisplayId, intensityUniform, extraBindings){
